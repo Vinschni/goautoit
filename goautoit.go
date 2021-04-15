@@ -119,7 +119,10 @@ var (
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
-	dll64 = loadLibrary(autoItX3)
+	dll64,err = loadLibrary(autoItX3)
+	if err !+ nil {
+		os.exit()
+	}
 	clipGet = dll64.NewProc("AU3_ClipGet")
 	clipPut = dll64.NewProc("AU3_ClipPut")
 	controlClick = dll64.NewProc("AU3_ControlClick")
