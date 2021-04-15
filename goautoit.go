@@ -4,8 +4,10 @@
 package goautoit
 
 import (
+	"fmt"
 	"log"
 	"path"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"unicode/utf16"
@@ -29,6 +31,9 @@ const (
 
 	INTDEFAULT         = -2147483647
 	DefaultMouseButton = "left"
+
+	libraryFolder = "external"
+	autoItX3      = "AutoItX3_x64.dll"
 )
 
 // HWND -- window handle
@@ -114,12 +119,7 @@ var (
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
-	// dll64, err = syscall.LoadDLL("D:\\Program Files (x86)\\AutoIt3\\AutoItX\\AutoItX3_x64.dll")
-	// defer dll64.Release()
-	_, filename, _, _ := runtime.Caller(1)
-	filename = path.Join(path.Dir(filename), "lib\\AutoItX3_x64.dll")
-	dll64 = syscall.NewLazyDLL(filename)
-	// dll64 = syscall.NewLazyDLL(os.Getenv("GOPATH") + "\\src\\github.com\\shadow1163\\goautoit\\lib\\AutoItX3_x64.dll")
+	dll64 = loadLibrary(autoItX3)
 	clipGet = dll64.NewProc("AU3_ClipGet")
 	clipPut = dll64.NewProc("AU3_ClipPut")
 	controlClick = dll64.NewProc("AU3_ControlClick")
@@ -178,6 +178,16 @@ func init() {
 	winGetState = dll64.NewProc("AU3_WinGetState")
 	winSetState = dll64.NewProc("AU3_WinSetState")
 	winWait = dll64.NewProc("AU3_WinWait")
+}
+
+func loadLibrary(library string) (*LazyDLL, error) {
+	_, filename, _, ok := runtime.Caller(1)
+	if !ok {
+		return nil, fmt.Errorf("error loading library %s\n", library)
+	}
+	libraryPath := string(path.Dir(filename) + string(filepath.Separator) +
+		libraryFolder + string(filepath.Separator) + library)
+	return syscall.NewLazyDLL(libraryPath), nil
 }
 
 // WinMinimizeAll -- all windows should be minimize
