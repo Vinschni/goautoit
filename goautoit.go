@@ -184,7 +184,7 @@ func init() {
 	winWait = dll64.NewProc("AU3_WinWait")
 }
 
-func loadLibrary(library string) (*LazyDLL, error) {
+func loadLibrary(library string) (*syscall.LazyDLL, error) {
 	_, filename, _, ok := runtime.Caller(1)
 	if !ok {
 		return nil, fmt.Errorf("error loading library %s\n", library)
