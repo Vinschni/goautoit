@@ -6,6 +6,7 @@ package goautoit
 import (
 	"fmt"
 	"log"
+	"os"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -119,9 +120,9 @@ var (
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
-	dll64,err = loadLibrary(autoItX3)
-	if err !+ nil {
-		os.exit()
+	dll64, err := loadLibrary(autoItX3)
+	if err != nil {
+		os.Exit(1)
 	}
 	clipGet = dll64.NewProc("AU3_ClipGet")
 	clipPut = dll64.NewProc("AU3_ClipPut")
