@@ -3,5 +3,5 @@
 package goautoit
 
 import (
-	_ "github.com/adrianriobo/goautoit/external"
+	_ "github.com/Vinschni/goautoit/external"
 )
