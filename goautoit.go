@@ -1166,8 +1166,16 @@ func ControlTreeViewByHandle(handle, control HWND, command string, args ...inter
 }
 
 //Opt -- set option
-func Opt(option, value string) int {
+func OptStr(option, value string) int {
 	ret, _, lastErr := opt.Call(strPtr(option), strPtr(value))
+	if int(ret) == 0 {
+		log.Println(lastErr)
+	}
+	return int(ret)
+}
+
+func OptInt(option string, value int) int {
+	ret, _, lastErr := opt.Call(strPtr(option), intPtr(value))
 	if int(ret) == 0 {
 		log.Println(lastErr)
 	}
