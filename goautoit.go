@@ -5,6 +5,7 @@ package goautoit
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -41,6 +42,10 @@ const (
 type HWND uintptr
 
 // RECT -- http://msdn.microsoft.com/en-us/library/windows/desktop/dd162897.aspx
+type POS struct {
+	X, Y, Width, Height int32
+}
+
 type RECT struct {
 	Left, Top, Right, Bottom int32
 }
@@ -89,6 +94,7 @@ var (
 	controlShowByHandle     *syscall.LazyProc
 	controlTreeView         *syscall.LazyProc
 	controlTreeViewByHandle *syscall.LazyProc
+	pixelCheckSum           *syscall.LazyProc
 	isAdmin                 *syscall.LazyProc
 	mouseClick              *syscall.LazyProc
 	mouseClickDrag          *syscall.LazyProc
@@ -115,7 +121,9 @@ var (
 	winGetHandle            *syscall.LazyProc
 	winGetText              *syscall.LazyProc
 	winGetClientSize        *syscall.LazyProc
+	winGetPos               *syscall.LazyProc
 	winGetTitle             *syscall.LazyProc
+	winGetTitleByHandle     *syscall.LazyProc
 	winMinimizeAll          *syscall.LazyProc
 	winMinimizeAllundo      *syscall.LazyProc
 	winMove                 *syscall.LazyProc
@@ -126,6 +134,8 @@ var (
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
+	// disable logging
+	log.SetOutput(ioutil.Discard)
 	dll64, err := loadLibrary(autoItX3)
 	if err != nil {
 		os.Exit(1)
@@ -157,6 +167,7 @@ func init() {
 	controlTreeView = dll64.NewProc("AU3_ControlTreeView")
 	controlTreeViewByHandle = dll64.NewProc("AU3_ControlTreeViewByHandle")
 	isAdmin = dll64.NewProc("AU3_IsAdmin")
+	pixelCheckSum = dll64.NewProc("AU3_PixelChecksum")
 	mouseClick = dll64.NewProc("AU3_MouseClick")
 	mouseClickDrag = dll64.NewProc("AU3_MouseClickDrag")
 	mouseDown = dll64.NewProc("AU3_MouseDown")
@@ -182,7 +193,9 @@ func init() {
 	winGetHandle = dll64.NewProc("AU3_WinGetHandle")
 	winGetText = dll64.NewProc("AU3_WinGetText")
 	winGetClientSize = dll64.NewProc("AU3_WinGetClientSize")
+	winGetPos = dll64.NewProc("AU3_WinGetPos")
 	winGetTitle = dll64.NewProc("AU3_WinGetTitle")
+	winGetTitleByHandle = dll64.NewProc("AU3_WinGetTitleByHandle")
 	winMinimizeAll = dll64.NewProc("AU3_WinMinimizeAll")
 	winMinimizeAllundo = dll64.NewProc("AU3_WinMinimizeAllUndo")
 	winMove = dll64.NewProc("AU3_WinMove")
@@ -223,6 +236,18 @@ func WinGetTitle(szTitle, szText string, bufSize int) string {
 	return (goWString(buff))
 }
 
+// WinGetTitleByHandle -- get windows title
+func WinGetTitleByHandle(hwnd HWND, bufSize int) string {
+	// szTitle := "[active]"
+	// szText := ""
+	// bufSize := 256
+	buff := make([]uint16, int(bufSize))
+	ret, _, lastErr := winGetTitleByHandle.Call(uintptr(hwnd), uintptr(unsafe.Pointer(&buff[0])), intPtr(bufSize))
+	log.Println(ret)
+	log.Println(lastErr)
+	return (goWString(buff))
+}
+
 // WinGetText -- get text in window
 func WinGetText(szTitle, szText string, bufSize int) string {
 	buff := make([]uint16, int(bufSize))
@@ -231,9 +256,19 @@ func WinGetText(szTitle, szText string, bufSize int) string {
 }
 
 // WinGetClientSize -- Retrieves the size of a given window's client area.
-func WinGetClientSize(title, text string) RECT {
-	lprect := RECT{}
+func WinGetClientSize(title, text string) POS {
+	lprect := POS{}
 	ret, _, lastErr := winGetClientSize.Call(strPtr(title), strPtr(text), uintptr(unsafe.Pointer(&lprect)))
+	if int(ret) == 0 {
+		log.Println(lastErr)
+	}
+	return lprect
+}
+
+// WinGetPos -- Retrieves the size of a given window's client area.
+func WinGetPos(title, text string) POS {
+	lprect := POS{}
+	ret, _, lastErr := winGetPos.Call(strPtr(title), strPtr(text), uintptr(unsafe.Pointer(&lprect)))
 	if int(ret) == 0 {
 		log.Println(lastErr)
 	}
@@ -502,6 +537,17 @@ func ClipPut(szClip string) int {
 		log.Println(lastErr)
 	}
 	return int(ret)
+}
+
+//func PixelGetColor(x, y, )
+
+func PixelCheckSum(left, top, right, bottom int32, step int) uint64 {
+	lprect := RECT{left, top, right, bottom}
+	ret, _, lastErr := pixelCheckSum.Call(uintptr(unsafe.Pointer(&lprect)), intPtr(step))
+	if int(ret) == 0 {
+		log.Println(lastErr)
+	}
+	return uint64(ret)
 }
 
 // WinActivate ( "title" [, "text"]) int
