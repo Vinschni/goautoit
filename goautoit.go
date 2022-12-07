@@ -95,6 +95,7 @@ var (
 	controlTreeView         *syscall.LazyProc
 	controlTreeViewByHandle *syscall.LazyProc
 	pixelCheckSum           *syscall.LazyProc
+	pixelSearch             *syscall.LazyProc
 	isAdmin                 *syscall.LazyProc
 	mouseClick              *syscall.LazyProc
 	mouseClickDrag          *syscall.LazyProc
@@ -168,6 +169,7 @@ func init() {
 	controlTreeViewByHandle = dll64.NewProc("AU3_ControlTreeViewByHandle")
 	isAdmin = dll64.NewProc("AU3_IsAdmin")
 	pixelCheckSum = dll64.NewProc("AU3_PixelChecksum")
+	pixelSearch = dll64.NewProc("AU3_PixelSearch")
 	mouseClick = dll64.NewProc("AU3_MouseClick")
 	mouseClickDrag = dll64.NewProc("AU3_MouseClickDrag")
 	mouseDown = dll64.NewProc("AU3_MouseDown")
@@ -539,8 +541,6 @@ func ClipPut(szClip string) int {
 	return int(ret)
 }
 
-//func PixelGetColor(x, y, )
-
 func PixelCheckSum(left, top, right, bottom int32, step int) uint64 {
 	lprect := RECT{left, top, right, bottom}
 	ret, _, lastErr := pixelCheckSum.Call(uintptr(unsafe.Pointer(&lprect)), intPtr(step))
@@ -548,6 +548,17 @@ func PixelCheckSum(left, top, right, bottom int32, step int) uint64 {
 		log.Println(lastErr)
 	}
 	return uint64(ret)
+}
+
+// ixelSearch - Searches a rectangle of pixels for the pixel color provided.
+func PixelSearch(left, top, right, bottom int32, color, variation, step int) POINT {
+	lprect := RECT{left, top, right, bottom}
+	point_result := POINT{-1, -1}
+	ret, _, lastErr := pixelSearch.Call(uintptr(unsafe.Pointer(&lprect)), intPtr(color), intPtr(variation), intPtr(step), uintptr(unsafe.Pointer(&point_result)))
+	if int(ret) == 0 {
+		log.Println(lastErr)
+	}
+	return point_result
 }
 
 // WinActivate ( "title" [, "text"]) int
